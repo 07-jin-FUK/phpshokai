@@ -1,0 +1,49 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // フォームからデータを取得
+    $name = $_POST['name'];
+    $support = $_POST['support'];
+    $date = $_POST['date'];
+    $place = $_POST['place'];
+    $weather = $_POST['weather'];
+
+    // 動画ファイルをアップロード
+    $videoFileName = 'upload';
+    if (isset($_FILES['video']) && $_FILES['video']['error'] == 0) {
+        $uploadDir = 'uploads/';
+        $videoFileName = basename($_FILES['video']['name']);
+        $uploadFile = $uploadDir . $videoFileName;
+
+        // アップロード先ディレクトリが存在しない場合は作成
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // ファイルを移動
+        if (move_uploaded_file($_FILES['video']['tmp_name'], $uploadFile)) {
+            echo "ファイルは正しくアップロードされました。\n";
+        } else {
+            echo "ファイルのアップロードに失敗しました。\n";
+        }
+    } else {
+        echo "動画のアップロードにエラーがあります。エラーメッセージ: " . $_FILES['video']['error'] . "\n";
+        print_r($_FILES['video']);
+    }
+
+    // データをフォーマット
+    $line = "{$name} {$support} {$date} {$place} {$weather} {$videoFileName}\n";
+
+    // ファイルに書き込み
+    $file = fopen('data/todo.txt', 'a');
+    flock($file, LOCK_EX);
+    fwrite($file, $line);
+    flock($file, LOCK_UN);
+    fclose($file);
+
+    // 入力ページにリダイレクト
+    header("Location: todo_txt_input.php");
+    exit;
+}
